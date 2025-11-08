@@ -39,6 +39,8 @@
           devshells.default =
             let
               pwp = pkgs.python313.withPackages (ppkgs: [
+                ppkgs.flask
+                ppkgs.icalendar
                 ppkgs.selenium
               ]);
             in
