@@ -54,7 +54,7 @@
                 {
                   help = "start flask local development server";
                   name = "startflask";
-                  command = "flask --app ./src/wsgi run --host 0.0.0.0 -p 8080 --debug";
+                  command = "flask --app ./src/stadcal/wsgi run --host 0.0.0.0 -p 8080 --debug";
                 }
 
               ];
