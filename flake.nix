@@ -39,6 +39,26 @@
           packages.stadcal = let
              stadcal = pkgs.python313Packages.callPackage ./derivation.nix {};
              in  pkgs.python3.withPackages(_: [ stadcal ]);
+          nixosModules.stadcal = { config, lib, pkgs, ...}:
+            let
+              cfg = config.services.stadcal;
+            in{
+              options.services.stadcal = {
+                enable = lib.mkEnableOption "Enable the stadcal http service";
+              };
+              config = lib.mkIf cfg.enable {
+                systemd.services.stadcal = {
+                  wantedBy = [ "multi-user.target" ];
+                  serviceConfig = {
+                    Restart = "on-failure";
+                    ExecStart = "${self'.pkgs}/bin/gunicorn stadcal.wsgi:app";
+                    DynamicUser = "yes";
+                    RuntimeDirectory = "stadcal";
+                  };
+                };
+              };
+
+          };
           devshells.default =
             let
               pwp = pkgs.python313.withPackages (ppkgs: [
