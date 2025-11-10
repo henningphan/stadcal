@@ -8,7 +8,7 @@
   };
 
   outputs =
-    inputs@{ flake-parts, ... }:
+    inputs@{ self, flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
         inputs.devshell.flakeModule
@@ -16,9 +16,7 @@
       ];
       systems = [
         "x86_64-linux"
-        "aarch64-linux"
         "aarch64-darwin"
-        "x86_64-darwin"
       ];
       perSystem =
         {
@@ -39,26 +37,6 @@
           packages.stadcal = let
              stadcal = pkgs.python313Packages.callPackage ./derivation.nix {};
              in  pkgs.python3.withPackages(_: [ stadcal ]);
-          nixosModules.stadcal = { config, lib, pkgs, ...}:
-            let
-              cfg = config.services.stadcal;
-            in{
-              options.services.stadcal = {
-                enable = lib.mkEnableOption "Enable the stadcal http service";
-              };
-              config = lib.mkIf cfg.enable {
-                systemd.services.stadcal = {
-                  wantedBy = [ "multi-user.target" ];
-                  serviceConfig = {
-                    Restart = "on-failure";
-                    ExecStart = "${self'.pkgs}/bin/gunicorn stadcal.wsgi:app";
-                    DynamicUser = "yes";
-                    RuntimeDirectory = "stadcal";
-                  };
-                };
-              };
-
-          };
           devshells.default =
             let
               pwp = pkgs.python313.withPackages (ppkgs: [
@@ -89,6 +67,39 @@
         # The usual flake attributes can be defined here, including system-
         # agnostic ones like nixosModule and system-enumerating ones, although
         # those are more easily expressed in perSystem.
+          nixosModules = {
+            stadcal = { config, lib, pkgs, ...}:
+            let
+              cfg = config.services.stadcal;
+            in{
+              options.services.stadcal = {
+                enable = lib.mkEnableOption "Enable the stadcal http service";
+
+                port = lib.mkOption {
+                  type = lib.types.port;
+                  default = 8080;
+                  description = "TCP port number for receiving connections";
+                };
+                listenAddress = lib.mkOption {
+                  type = lib.types.str;
+                  default ="0.0.0.0";
+                  description = "Interface address for receiving connections";
+
+                };
+              };
+              config = lib.mkIf cfg.enable {
+                systemd.services.stadcal = {
+                  wantedBy = [ "multi-user.target" ];
+                  serviceConfig = {
+                    Restart = "on-failure";
+                    ExecStart = "${self.packages.x86_64-linux.stadcal}/bin/gunicorn stadcal.wsgi:app -b ${cfg.listenAddress}:${builtins.toString cfg.port}";
+                    DynamicUser = "yes";
+                    RuntimeDirectory = "stadcal";
+                  };
+                };
+              };
+          };
+          };
 
       };
     };
