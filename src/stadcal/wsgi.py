@@ -1,24 +1,33 @@
 from flask import Flask, make_response
 from . import cal
 from apscheduler.schedulers.background import BackgroundScheduler
+import tomllib
+from . import scraper
 
-scheduler = BackgroundScheduler()
+def create_app(config_path):
+    app = Flask(__name__)
+    scheduler = BackgroundScheduler()
+    print(f"Creating app: config_path={config_path}")
+    if app.config.from_file(config_path, load=tomllib.load, text=False):
+        print("successfully loaded config")
 
-def my_func():
-    print("echo hi")
+    def renew_calendar():
+        print("echo hi")
 
-scheduler.add_job(my_func) # Run once immediately
-scheduler.add_job(my_func, "interval", minutes=1)
-scheduler.start()
+    @app.route("/")
+    def hello_world():
+        return "<p>hello world</p>"
 
-app = Flask(__name__)
+    @app.route("/stadalliansen.ics")
+    def ics():
+        serviceInfos = scraper.get_events_from_source(app.config["USERNAME"], app.config["PASSWORD"])
+        calendar = cal.from_service_info(serviceInfos)
 
-@app.route("/")
-def hello_world():
-    return "<p>hello world</p>"
+        response = make_response(calendar.to_ical().decode("ascii"), 200)
+        response.mimetype = "text/calendar"
+        return response
 
-@app.route("/stadalliansen.ics")
-def ics():
-    response = make_response(cal.calendar.to_ical().decode("ascii"), 200)
-    response.mimetype = "text/calendar"
-    return response
+    scheduler.add_job(renew_calendar) # Run once immediately
+    scheduler.add_job(renew_calendar, "interval", minutes=1)
+    scheduler.start()
+    return app

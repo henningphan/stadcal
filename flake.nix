@@ -86,15 +86,27 @@
                   description = "Interface address for receiving connections";
 
                 };
+                configPath = lib.mkOption {
+                  type = lib.types.path;
+                  default ="/run/secrets/stadcal.toml";
+                  description = "Path to stadcal toml config file";
+                };
               };
               config = lib.mkIf cfg.enable {
                 systemd.services.stadcal = {
                   wantedBy = [ "multi-user.target" ];
                   serviceConfig = {
                     Restart = "on-failure";
-                    ExecStart = "${self.packages.x86_64-linux.stadcal}/bin/gunicorn stadcal.wsgi:app -b ${cfg.listenAddress}:${builtins.toString cfg.port}";
+                    ExecStart = let
+                      start_http = pkgs.writeShellScript "start_http" ''
+                        ${self.packages.x86_64-linux.stadcal}/bin/gunicorn \
+                        "stadcal.wsgi:create_app('$CREDENTIALS_DIRECTORY/stadcal.toml')" \
+                        -b ${cfg.listenAddress}:${builtins.toString cfg.port}
+                      '';
+                        in "${start_http}";
                     DynamicUser = "yes";
                     RuntimeDirectory = "stadcal";
+                    LoadCredential = [ "stadcal.toml:${cfg.configPath}"];
                   };
                 };
               };
