@@ -10,9 +10,12 @@ pkgs.python313Packages.buildPythonPackage rec {
     pkgs.python3Packages.gunicorn
     pkgs.python3Packages.icalendar
     pkgs.python3Packages.selenium
+    pkgs.firefox
+  ];
+  build-system = [
     pkgs.python3Packages.setuptools
   ];
-        build-system = [
-        ];
-
+  buildInputs = [
+    pkgs.firefox
+  ];
 }

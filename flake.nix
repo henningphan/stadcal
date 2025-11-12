@@ -57,8 +57,9 @@
 
               ];
               packages = [
-                pwp
+                #pwp
                 pkgs.firefox
+                self'.packages.stadcal
               ];
 
             };
@@ -99,13 +100,15 @@
                     Restart = "on-failure";
                     ExecStart = let
                       start_http = pkgs.writeShellScript "start_http" ''
+                        echo henningpath=$PATH
+                        export PATH=$PATH:${pkgs.firefox}/bin/
                         ${self.packages.x86_64-linux.stadcal}/bin/gunicorn \
                         "stadcal.wsgi:create_app('$CREDENTIALS_DIRECTORY/stadcal.toml')" \
                         -b ${cfg.listenAddress}:${builtins.toString cfg.port}
                       '';
                         in "${start_http}";
-                    DynamicUser = "yes";
                     RuntimeDirectory = "stadcal";
+                    RuntimeDirectoryMode = "750";
                     LoadCredential = [ "stadcal.toml:${cfg.configPath}"];
                   };
                 };

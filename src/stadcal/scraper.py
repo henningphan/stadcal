@@ -6,6 +6,8 @@ from selenium.webdriver.firefox.options import Options
 from datetime import datetime
 import time
 from zoneinfo import ZoneInfo
+import logging
+logger = logging.getLogger(__name__)
 
 tz = ZoneInfo("Europe/Stockholm")
 
@@ -47,7 +49,14 @@ class ServiceInfo:
 def _get_service_infos(username, password):
     options = Options()
     options.add_argument("--headless")
-    driver = webdriver.Firefox(options=options)
+    options.add_argument("--profile=/tmp/selenium")
+    logger.info("create webdriver")
+    try:
+        driver = webdriver.Firefox(options=options)
+    except Exception as e:
+        logger.exception("_get_service_infos")
+        raise e
+    logger.info("get stadalliansen")
     driver.get("https://stadalliansen.städportalen.se/")
 
     title = driver.title
