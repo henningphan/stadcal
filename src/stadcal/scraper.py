@@ -1,14 +1,10 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.firefox.options import Options
 from datetime import datetime
-import time
 from zoneinfo import ZoneInfo
 import logging
-logger = logging.getLogger(__name__)
 
+from playwright.sync_api import sync_playwright
+
+logger = logging.getLogger(__name__)
 tz = ZoneInfo("Europe/Stockholm")
 
 class ServiceInfo:
@@ -26,7 +22,8 @@ class ServiceInfo:
 
     @staticmethod
     def from_service_info_str(service_info_str):
-        si_li = service_info_str.split("\n")
+        #return [s.text_content().replace("\t", "").strip().split("\n \n") for s in service_infos]
+        si_li = service_info_str.replace("\t", "").strip().split("\n \n")
         return ServiceInfo(si_li[0],
                            ServiceInfo.get_start_time(si_li),
                            ServiceInfo.get_end_time(si_li))
@@ -45,43 +42,32 @@ class ServiceInfo:
         dt_end = dt_end.replace(tzinfo=tz)
         return dt_end
 
-
 def _get_service_infos(username, password):
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--profile=/tmp/selenium")
-    logger.info("create webdriver")
-    try:
-        driver = webdriver.Firefox(options=options)
-    except Exception as e:
-        logger.exception("_get_service_infos")
-        raise e
-    logger.info("get stadalliansen")
-    driver.get("https://stadalliansen.städportalen.se/")
+    with sync_playwright() as p:
+        browser=p.firefox.launch(headless=True)
+        page=browser.new_page()
 
-    title = driver.title
+        # Login
+        page.goto("https://stadalliansen.städportalen.se/")
+        username_box=page.locator("xpath=//input[starts-with(@placeholder, 'Användarnamn')]")
+        password_box = page.locator("xpath=//input[starts-with(@type, 'password')]")
+        submit_button = page.get_by_role("button")
+        username_box.fill(username)
+        password_box.fill(password)
+        submit_button.click()
 
-    driver.implicitly_wait(0.5)
+        # go to services
+        page.wait_for_selector("xpath=//a[@href='/services']")
+        services_button = page.locator("xpath=//a[@href='/services']")
+        services_button.click()
 
-    username_box = driver.find_element(by=By.XPATH, value="//input[starts-with(@placeholder, 'Användarnamn')]")
-    submit_button = driver.find_element(by=By.TAG_NAME, value="button")
+        #page.wait_for_selector(".service-info")
+        page.wait_for_selector("xpath=//div[@class='customer-mission upcoming']")
+        service_infos = page.locator("xpath=//div[@class='customer-mission upcoming']/div/div[@class='service-info']").all()
+        service_info_strs = [si.text_content() for si in service_infos]
 
-    password_box = driver.find_element(by=By.XPATH, value="//input[starts-with(@type, 'password')]")
-    username_box.send_keys(username)
-    password_box.send_keys(password)
-    submit_button.click()
-    time.sleep(1)
-    services_button = driver.find_element(by=By.XPATH, value="//a[@href='/services']")
-    services_button.click()
-
-    timeout_s = 20
-    wait = WebDriverWait(driver, timeout_s)# .until(EC.element_to_be_clickable((By.TAG_NAME, "button"))).click()
-    wait.until(EC.presence_of_element_located((By.CLASS_NAME, "service-info")))
-
-    service_infos_str = [e.text for e in driver.find_elements(by=By.CLASS_NAME, value="service-info")]
-    driver.quit()
-    return service_infos_str
+        return service_info_strs
 
 def get_events_from_source(username, password):
-    service_infos = _get_service_infos(username, password)
-    return [ServiceInfo.from_service_info_str(si) for si in service_infos]
+    service_info_strs = _get_service_infos(username, password)
+    return [ServiceInfo.from_service_info_str(si) for si in service_info_strs]

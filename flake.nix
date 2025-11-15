@@ -45,9 +45,23 @@
                 ppkgs.gunicorn
                 ppkgs.icalendar
                 ppkgs.selenium
+                ppkgs.playwright
               ]);
             in
             {
+              env = [
+                {
+                  name="PLAYWRIGHT_BROWSERS_PATH";
+                  value="${pkgs.playwright-driver.browsers}";
+                }
+
+                {
+                  name="PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS";
+                  value="true";
+                }
+
+
+              ];
               commands = [
                 {
                   help = "start flask local development server";
@@ -57,9 +71,9 @@
 
               ];
               packages = [
-                #pwp
+                pwp
                 pkgs.firefox
-                self'.packages.stadcal
+                # self'.packages.stadcal
               ];
 
             };
@@ -100,11 +114,12 @@
                     Restart = "on-failure";
                     ExecStart = let
                       start_http = pkgs.writeShellScript "start_http" ''
-                        echo henningpath=$PATH
-                        export PATH=$PATH:${pkgs.firefox}/bin/
+                        export "PLAYWRIGHT_BROWSERS_PATH=${pkgs.playwright-driver.browsers}"
+                        export "PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true"
+
                         ${self.packages.x86_64-linux.stadcal}/bin/gunicorn \
-                        "stadcal.wsgi:create_app('$CREDENTIALS_DIRECTORY/stadcal.toml')" \
-                        -b ${cfg.listenAddress}:${builtins.toString cfg.port}
+                                "stadcal.wsgi:create_app('$CREDENTIALS_DIRECTORY/stadcal.toml')" \
+                                -b ${cfg.listenAddress}:${builtins.toString cfg.port}
                       '';
                         in "${start_http}";
                     RuntimeDirectory = "stadcal";

@@ -25,6 +25,8 @@ def create_app(config_path):
         serviceInfos = scraper.get_events_from_source(app.config["USERNAME"], app.config["PASSWORD"])
         calendar = cal.from_service_info(serviceInfos)
         app.config["calendar"] = calendar
+        logger.info("renew calendar done")
+    renew_calendar()
 
     @app.route("/")
     def hello_world():
@@ -34,12 +36,13 @@ def create_app(config_path):
     @app.route("/stadalliansen.ics")
     def ics():
         logger.info("Request ics")
+        logger.info(app.config["calendar"])
 
         response = make_response(app.config["calendar"].to_ical().decode("ascii"), 200)
         response.mimetype = "text/calendar"
         return response
 
-    scheduler.add_job(renew_calendar) # Run once immediately
+    #scheduler.add_job(renew_calendar) # Run once immediately
     scheduler.add_job(renew_calendar, "interval", minutes=60)
     scheduler.start()
     return app
