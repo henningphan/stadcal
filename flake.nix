@@ -66,7 +66,7 @@
                 {
                   help = "start flask local development server";
                   name = "startflask";
-                  command = "flask --app ./src/stadcal/wsgi run --host 0.0.0.0 -p 8080 --debug";
+                  command = ''flask --app "./src/stadcal:create_app('../../example.config.toml')" run --host 0.0.0.0  -p 8080 --debug'';
                 }
 
               ];
@@ -125,7 +125,7 @@
                         export "PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true"
 
                         ${self.packages.x86_64-linux.stadcal}/bin/gunicorn \
-                                "stadcal.wsgi:create_app('$CREDENTIALS_DIRECTORY/stadcal.toml')" \
+                                "stadcal:create_app('$CREDENTIALS_DIRECTORY/stadcal.toml')" \
                                 -b ${cfg.listenAddress}:${builtins.toString cfg.port}
                       '';
                         in "${start_http}";
