@@ -110,7 +110,14 @@
               config = lib.mkIf cfg.enable {
                 systemd.services.stadcal = {
                   wantedBy = [ "multi-user.target" ];
+                  environment = {
+                    HOME="%C/stadcal";
+                  };
                   serviceConfig = {
+                    DynamicUser = "true";
+                    PrivateDevices="true";
+                    ProtectHome="true";
+                    ProtectClock="true";
                     Restart = "on-failure";
                     ExecStart = let
                       start_http = pkgs.writeShellScript "start_http" ''
@@ -124,6 +131,8 @@
                         in "${start_http}";
                     RuntimeDirectory = "stadcal";
                     RuntimeDirectoryMode = "750";
+                    CacheDirectory = "stadcal";
+                    CacheDirectoryMode = "750";
                     LoadCredential = [ "stadcal.toml:${cfg.configPath}"];
                   };
                 };
