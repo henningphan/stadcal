@@ -9,7 +9,6 @@ pkgs.python313Packages.buildPythonPackage rec {
     pkgs.python3Packages.flask
     pkgs.python3Packages.gunicorn
     pkgs.python3Packages.icalendar
-    pkgs.python3Packages.selenium
     pkgs.python3Packages.playwright
     pkgs.firefox
   ];
@@ -17,6 +16,5 @@ pkgs.python313Packages.buildPythonPackage rec {
     pkgs.python3Packages.setuptools
   ];
   buildInputs = [
-    pkgs.firefox
   ];
 }
