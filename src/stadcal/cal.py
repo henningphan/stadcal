@@ -31,16 +31,16 @@ def static_cal():
     calendar.add_component(event)
     return calendar
 
-def from_service_info(serviceInfos):
+def from_missions(missions):
     calendar = Calendar()
-    for si in serviceInfos:
+    for m in missions:
         event = Event()
         event.add("name", "stadalliansen")
-        event.add("uid", str(si.start))
-        event.add("description", si.summary)
-        event.add("summary", si.summary)
-        event.add("dtstart", si.start)
-        event.add("dtend", si.end)
+        event.add("uid", str(m.start))
+        event.add("description",f"employees: {', '.join(m.employee_names)}")
+        event.add("summary", f"employees: {', '.join(m.employee_names)}")
+        event.add("dtstart", m.start)
+        event.add("dtend", m.end)
         calendar.add_component(event)
     return calendar
 

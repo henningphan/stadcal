@@ -18,13 +18,13 @@ def create_app(config_path):
 
     def renew_calendar():
         logger.info("renew calendar")
-        serviceInfos = []
+        missions = []
         try:
-            serviceInfos = scraper.get_events_from_source(app.config["USERNAME"], app.config["PASSWORD"])
+            missions = scraper.get_missions_from_stadalliansen(app.config["USERNAME"], app.config["PASSWORD"])
         except Exception:
             logger.exception("get events from source failed")
-        if serviceInfos:
-            calendar = cal.from_service_info(serviceInfos)
+        if missions:
+            calendar = cal.from_missions(missions)
         else:
             calendar = cal.broken()
 
