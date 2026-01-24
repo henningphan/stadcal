@@ -66,7 +66,7 @@
                 {
                   help = "start flask local development server";
                   name = "startflask";
-                  command = ''flask --app "./src/stadcal:create_app('../../example.config.toml')" run --host 0.0.0.0  -p 8080 --debug'';
+                  command = ''flask --app "./src/stadcal:create_app('../../example.config.toml')" run --host 0.0.0.0  -p 8081 --debug'';
                 }
               ];
 
