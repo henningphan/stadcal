@@ -95,6 +95,7 @@
             {
               options.services.stadcal = {
                 enable = lib.mkEnableOption "Enable the stadcal http service";
+                enableProxy = lib.mkEnableOption "enableProxy";
 
                 port = lib.mkOption {
                   type = lib.types.port;
@@ -114,6 +115,23 @@
                 };
               };
               config = lib.mkIf cfg.enable {
+                henning.nginx.virtualHosts = lib.mkIf cfg.enableProxy {
+                  "stadcal.phan.se" = {
+                    forceSSL = true;
+                    enableACME = true;
+                    locations."/" = {
+                      proxyPass = "http://${cfg.listenAddress}:8080";
+                      extraConfig = ''
+                        proxy_set_header        Host $host;
+                        proxy_set_header        X-Real-IP $proxy_protocol_addr;
+                        proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                        proxy_set_header        X-Forwarded-Proto $scheme;
+                        proxy_set_header        X-Forwarded-Host $host;
+                        proxy_set_header        X-Forwarded-Server $host;
+                      '';
+                    };
+                  };
+                };
                 systemd.services.stadcal = {
                   wantedBy = [ "multi-user.target" ];
                   environment = {
