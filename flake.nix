@@ -37,7 +37,7 @@
             let
               stadcal = pkgs.python313Packages.callPackage ./derivation.nix { };
             in
-            pkgs.python3.withPackages (_: [ stadcal ]);
+            pkgs.python313.withPackages (_: [ stadcal ]);
           devshells.default =
             let
               pwp = pkgs.python313.withPackages (ppkgs: [
